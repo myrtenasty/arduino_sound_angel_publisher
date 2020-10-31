@@ -2,6 +2,14 @@
 #define wait 200 // wait 200 milliseconds after an angel is given
 #define pi 3.1415926
 
+#include <ros.h>
+#include <std_msgs/Float32.h>
+
+ros::NodeHandle nh;
+
+std_msgs::Float32 sound_angel;
+ros::Publisher pub_angel("angel", &sound_angel);
+
 int A = 2; // mic A pin
 int B = 3; // mic B pin
 int C = 4; // mic C pin
@@ -12,6 +20,7 @@ float angel; // the angel of sound source
 float t; // ambient temperature
 float soundVel; // velocity of sound under ambient temperature of t
 int dir = 0; // indicate on which side of the mic is the sound source
+bool micTriggered = false; // true if a mic is triggered
 
 inline int digitalRead_fast(int pin)
 {
@@ -28,6 +37,9 @@ void setup() {
   pinMode(B, INPUT);
   pinMode(C, INPUT);
 
+  nh.initNode();
+  nh.advertise(pub_angel);
+
 }
 
 void loop() {
@@ -40,6 +52,7 @@ void loop() {
   t1 = 0;
   t2 = 0;
   angel = 0.0;
+  micTriggered = false;
 
   if (digitalRead_fast(A) == 0) {
     t1 = micros();
@@ -52,7 +65,8 @@ void loop() {
     else {
       angel = rad(t3, A, z);
       delay(20);
-      Serial.println(String(t3) + ", " + String(angel) + " A");
+      // Serial.println(String(t3) + ", " + String(angel) + " A");
+      micTriggered = true;
     }
     delay(wait);
   }
@@ -67,7 +81,8 @@ void loop() {
     else {
       angel = rad(t3, B, z);
       delay(20);
-      Serial.println(String(t3) + ", " + String(angel) + " B");
+      // Serial.println(String(t3) + ", " + String(angel) + " B");
+      micTriggered = true;
     }
     delay(wait);
   }
@@ -82,9 +97,17 @@ void loop() {
     else {
       angel = rad(t3, C, z);
       delay(20);
-      Serial.println(String(t3) + ", " + String(angel) + " C");
+      // Serial.println(String(t3) + ", " + String(angel) + " C");
+      micTriggered = true;
     }
     delay(wait);
+  }
+
+  if(micTriggered){
+    sound_angel.data = angel;
+    pub_angel.publish(&sound_angel);
+    nh.spinOnce();
+    delay(500);
   }
 
 }
