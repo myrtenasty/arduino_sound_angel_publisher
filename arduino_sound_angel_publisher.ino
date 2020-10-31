@@ -122,14 +122,19 @@ float rad(float dt, int mic, int zone) {
     dir = -1;
   }
 
-  if (mic == 2) {
+  switch (mic)
+  {
+  case 2:
     ang = 0 + dir * (60 - 180 / pi * asin((dt * 0.000001 * soundVel) / dis));
-  }
-  else if (mic == 3) {
+    break;
+  case 3:
     ang = -120 + dir * (60 - 180 / pi * asin((dt * 0.000001 * soundVel) / dis));
-  }
-  else {
+    break;
+  case 4:
     ang = 120 + dir * (60 - 180 / pi * asin((dt * 0.000001 * soundVel) / dis));
+    break;
+  default:
+    break;
   }
 
   return ang;
