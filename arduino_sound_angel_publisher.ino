@@ -2,6 +2,8 @@
 #define wait 200 // wait 200 milliseconds after an angel is given
 #define pi 3.1415926
 
+#define USE_USBCON
+
 #include <ros.h>
 #include <std_msgs/Float32.h>
 
