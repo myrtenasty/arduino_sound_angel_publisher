@@ -5,12 +5,16 @@
 #define USE_USBCON
 
 #include <ros.h>
-#include <std_msgs/Float32.h>
+//#include <std_msgs/Float32.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <tf/tf.h>
+
 
 ros::NodeHandle nh;
 
-std_msgs::Float32 sound_angel;
-ros::Publisher pub_angel("angel", &sound_angel);
+//std_msgs::Float32 sound_angel;
+geometry_msgs::PoseStamped sound_pose;
+ros::Publisher pub_sound("sound_pose", &sound_pose);
 
 int A = 2; // mic A pin
 int B = 3; // mic B pin
@@ -35,12 +39,14 @@ void setup() {
   soundVel = 331.3 + 0.606 * t;
 
   Serial.begin(115200);
-  pinMode(A, INPUT);
-  pinMode(B, INPUT);
-  pinMode(C, INPUT);
+  pinMode(A, INPUT_PULLUP);
+  pinMode(B, INPUT_PULLUP);
+  pinMode(C, INPUT_PULLUP);
 
   nh.initNode();
-  nh.advertise(pub_angel);
+  nh.advertise(pub_sound);
+
+  sound_pose.header.frame_id = "base_link";
 
 }
 
@@ -106,8 +112,11 @@ void loop() {
   }
 
   if(micTriggered){
-    sound_angel.data = angel;
-    pub_angel.publish(&sound_angel);
+    sound_pose.pose.orientation = tf::createQuaternionFromYaw(angel);
+    sound_pose.header.stamp.sec = micros()/1000000;
+    sound_pose.header.stamp.nsec = micros()*1000;
+//    sound_pose.header.stamp = ros::Time::now();
+    pub_sound.publish(&sound_pose);
     nh.spinOnce();
     delay(500);
   }
