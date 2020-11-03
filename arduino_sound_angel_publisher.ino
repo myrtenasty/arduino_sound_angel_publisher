@@ -16,9 +16,9 @@ ros::NodeHandle nh;
 geometry_msgs::PoseStamped sound_pose;
 ros::Publisher pub_sound("sound_pose", &sound_pose);
 
-int A = 2; // mic A pin
-int B = 3; // mic B pin
-int C = 4; // mic C pin
+const int A = 2; // mic A pin
+const int B = 3; // mic B pin
+const int C = 4; // mic C pin
 float t1; // micro second time when the first mic is triggered
 float t2; // micro second time when the second mic is triggered
 float testDelay;
@@ -39,9 +39,9 @@ void setup() {
   soundVel = 331.3 + 0.606 * t;
 
   Serial.begin(115200);
-  pinMode(A, INPUT_PULLUP);
-  pinMode(B, INPUT_PULLUP);
-  pinMode(C, INPUT_PULLUP);
+  pinMode(A, INPUT);
+  pinMode(B, INPUT);
+  pinMode(C, INPUT);
 
   nh.initNode();
   nh.advertise(pub_sound);
@@ -68,8 +68,8 @@ void loop() {
     t2 = micros();
     int z = digitalRead_fast(B) - digitalRead_fast(C);
     float t3 = t2 - t1;
-    Serial.println(z);
-    if (abs(t3) > 1000 || t1 == 0) {}
+    float vSin = (t3 * 0.000001 * soundVel) / dis;
+    if (abs(t3) > 1000 || t1 == 0 || abs(vSin) >= 1) {}
     else {
       angel = rad(t3, A, z);
       delay(20);
@@ -85,7 +85,8 @@ void loop() {
     t2 = micros();
     int z = digitalRead_fast(C) - digitalRead_fast(A);
     float t3 = t2 - t1;
-    if (abs(t3) > 1000 || t1 == 0) {}
+    float vSin = (t3 * 0.000001 * soundVel) / dis;
+    if (abs(t3) > 1000 || t1 == 0 || abs(vSin) >= 1) {}
     else {
       angel = rad(t3, B, z);
       delay(20);
@@ -101,7 +102,8 @@ void loop() {
     t2 = micros();
     int z = digitalRead_fast(A) - digitalRead_fast(B);
     float t3 = t2 - t1;
-    if (abs(t3) > 1000 || t1 == 0) {}
+    float vSin = (t3 * 0.000001 * soundVel) / dis;
+    if (abs(t3) > 1000 || t1 == 0 || abs(vSin) >= 1) {}
     else {
       angel = rad(t3, C, z);
       delay(20);
@@ -113,6 +115,9 @@ void loop() {
 
   if(micTriggered){
     sound_pose.pose.orientation = tf::createQuaternionFromYaw(angel);
+    sound_pose.pose.position.x = cos(angel);
+    sound_pose.pose.position.y = sin(angel);
+//    sound_pose.pose.position.z = angel;
     sound_pose.header.stamp.sec = micros()/1000000;
     sound_pose.header.stamp.nsec = micros()*1000;
 //    sound_pose.header.stamp = ros::Time::now();
@@ -135,14 +140,14 @@ float rad(float dt, int mic, int zone) {
 
   switch (mic)
   {
-  case 2:
-    ang = 0 + dir * (60 - 180 / pi * asin((dt * 0.000001 * soundVel) / dis));
+  case A:
+    ang = 0 + dir * (pi/3 - asin((dt * 0.000001 * soundVel) / dis));
     break;
-  case 3:
-    ang = -120 + dir * (60 - 180 / pi * asin((dt * 0.000001 * soundVel) / dis));
+  case B:
+    ang = -2*pi/3 + dir * (pi/3 - asin((dt * 0.000001 * soundVel) / dis));
     break;
-  case 4:
-    ang = 120 + dir * (60 - 180 / pi * asin((dt * 0.000001 * soundVel) / dis));
+  case C:
+    ang = 2*pi/3 + dir * (pi/3 - asin((dt * 0.000001 * soundVel) / dis));
     break;
   default:
     break;
